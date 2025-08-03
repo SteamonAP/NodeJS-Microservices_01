@@ -1,0 +1,71 @@
+require("dotenv").config();
+const logger = require("./utils/logger.js");
+const mongoose = require("mongoose");
+const express = require("express");
+const helmet = require("helmet");
+const cors = require("cors");
+const app = express();
+const { Redis } = require("@upstash/redis");
+const { Ratelimit } = require("@upstash/ratelimit");
+const errorHandler = require("./middleware/errorHandler.js");
+const mediaRoutes = require("./routes/media-routes.js");
+const { connectToRabbitMQ, consumeEvent } = require("./utils/rabbitmq.js");
+const {
+  handlePostDeleted,
+} = require("./eventHandlers/media-event-handlers.js");
+
+const PORT = process.env.PORT || 3003;
+
+mongoose
+  .connect(process.env.MONGO_URI)
+  .then(() => logger.info("Connected to DB"))
+  .catch((e) => logger.error("Connection error with DB", e));
+
+const redisClient = new Redis({
+  url: process.env.UPSTASH_REDIS_REST_URL,
+  token: process.env.UPSTASH_REDIS_REST_TOKEN,
+});
+
+app.use(
+  cors({
+    origin: "*",
+    credentials: true,
+  })
+);
+app.use(helmet()); //secure  the express app  by setting various http headers
+app.use(express.json());
+
+app.use((req, res, next) => {
+  logger.info(`Recieved ${req.method} request to ${req.url}`);
+  if (req.body) {
+    const { password, ...bodyToLog } = req.body;
+    logger.info(`Request body: ${JSON.stringify(bodyToLog)}`);
+  }
+  next();
+});
+
+app.use("/api/media", mediaRoutes);
+app.use(errorHandler);
+
+const startServer = async () => {
+  try {
+    await connectToRabbitMQ();
+    await consumeEvent("post.deleted", handlePostDeleted);
+    app.listen(PORT, () => {
+      logger.info(`Media-service running on port ${PORT}`);
+    });
+  } catch (error) {
+    logger.error("Failed to connect to Server", error);
+    process.exit(1);
+  }
+};
+startServer();
+
+
+process.on("unhandledRejection", (reason, promise) => {
+  logger.error(
+    `Unhandled Rejection at: ${promise} reason: ${
+      typeof reason === "object" ? JSON.stringify(reason) : String(reason)
+    }`
+  );
+});
