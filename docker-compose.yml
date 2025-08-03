@@ -5,7 +5,7 @@ services:
     build: ./api-gateway
     ports:
       - "3000:3000"
-    env_file: 
+    env_file:
       - ./api-gateway/.env
     depends_on:
       - user-service
@@ -18,28 +18,32 @@ services:
     env_file:
       - ./user_Id-service/.env
     depends_on:
-      - rabbitmq
+      rabbitmq:
+        condition: service_healthy
 
   post-service:
     build: ./post-service
     env_file:
       - ./post-service/.env
     depends_on:
-      - rabbitmq           
+      rabbitmq:
+        condition: service_healthy
 
   media-service:
     build: ./media-service
     env_file:
       - ./media-service/.env
     depends_on:
-      - rabbitmq
+      rabbitmq:
+        condition: service_healthy
 
   search-service:
     build: ./search-service
     env_file:
       - ./search-service/.env
     depends_on:
-      - rabbitmq
+      rabbitmq:
+        condition: service_healthy
 
   rabbitmq:
     image: rabbitmq:3.13-management
@@ -47,12 +51,11 @@ services:
       - "5672:5672"
       - "15672:15672"
     healthcheck:
-      test: ["CMD" , "rabbitmq-diagnostics","-q","ping"]
-      interval: 30s
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
       timeout: 10s
-      retries: 5      
+      retries: 5
 
 networks:
   default:
-    driver: bridge                                                
-    
+    driver: bridge
