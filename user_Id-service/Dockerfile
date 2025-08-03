@@ -1,7 +1,7 @@
 #node image 18v with alpine linux an base image
 FROM node:18-alpine 
 
-WORKDIR /use/src/app
+WORKDIR /usr/src/app
 
 COPY package*.json ./
 
