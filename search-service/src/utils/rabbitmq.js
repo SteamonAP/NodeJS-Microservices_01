@@ -7,16 +7,23 @@ let channel = null;
 
 const EXCHANGE_NAME = "socialp_events";
 
-const connectToRabbitMQ = async () => {
-  try {
-    connection = await amqp.connect(process.env.RABBITMQ_URL);
-    channel = await connection.createChannel();
-    await channel.assertExchange(EXCHANGE_NAME, "topic", { durable: false });
-    logger.info("Connected to RabbitMQ");
-    return channel;
-  } catch (error) {
-    logger.error("Error connecting to Rabbit MQ", error);
-    process.exit(1);
+const connectToRabbitMQ = async (retries = 10, delay = 5000) => {
+  for (let i = 0; i < retries; i++) {
+    try {
+      const amqpUrl = process.env.RABBITMQ_URL || "amqp://rabbitmq:5672";
+      connection = await amqp.connect(amqpUrl);
+      channel = await connection.createChannel();
+      await channel.assertExchange(EXCHANGE_NAME, "topic", { durable: false });
+      logger.info("Connected to RabbitMQ");
+      return channel;
+    } catch (error) {
+      logger.error(`RabbitMQ connection failed (Attempt ${i + 1}/${retries}): ${error.message}`);
+      if (i === retries - 1) {
+        logger.error("Could not connect to RabbitMQ. Exiting.");
+        process.exit(1);
+      }
+      await new Promise((res) => setTimeout(res, delay));
+    }
   }
 };
 
