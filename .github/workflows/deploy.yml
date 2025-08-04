@@ -19,35 +19,35 @@ jobs:
           password: ${{ secrets.DOCKER_PASSWORD }}
 
       - name: Build and Push API Gateway
-        uses: docker/build-push-action@4
+        uses: docker/build-push-action@v4
         with:
           context: ./api-gateway
           push: true
           tags: ${{ secrets.DOCKER_USERNAME }}/api-gateway:latest
 
       - name: Build and Push User Service
-        uses: docker/build-push-action@4
+        uses: docker/build-push-action@v4
         with:
           context: ./user_Id-service
           push: true
           tags: ${{ secrets.DOCKER_USERNAME }}/user-service:latest
 
       - name: Build and Push Post service
-        uses: docker/build-push-action@4
+        uses: docker/build-push-action@v4
         with:
           context: ./post-service
           push: true
           tags: ${{ secrets.DOCKER_USERNAME }}/post-service:latest
 
       - name: Build and Push Media Service
-        uses: docker/build-push-action@4
+        uses: docker/build-push-action@v4
         with:
           context: ./media-service
           push: true
           tags: ${{ secrets.DOCKER_USERNAME }}/media-service:latest
 
       - name: Build and Push Search Service
-        uses: docker/build-push-action@4
+        uses: docker/build-push-action@v4
         with:
           context: ./search-service
           push: true
